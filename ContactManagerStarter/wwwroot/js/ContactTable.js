@@ -150,13 +150,14 @@ $(function () {
             return isValid;
         }
 
+
         let data = {
             ContactId: $("#contactId").val() || "00000000-0000-0000-0000-000000000000",
             Title: $("#editContactTitle").val(),
             FirstName: $("#editContactFirstName").val(),
             LastName: $("#editContactLastName").val(),
             DOB: $("#editContactDOB").val(),
-            PrimaryEmail: $("#selectPrimaryEmail option:selected").text(),
+            PrimaryEmail: $("#selectPrimaryEmail option:selected").val() == "" ? null : $("#selectPrimaryEmail option:selected").val(),
             Emails: getEmailAddresses(),
             Addresses: getAddresses()
         };
