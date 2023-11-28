@@ -18,7 +18,12 @@ builder.Services.AddDbContext<ApplicationContext>(options =>
                 options
                     .UseSqlServer(builder.Configuration.GetConnectionString("ContactDb"),
                         opts => opts.CommandTimeout(600)));
-
+builder.Logging.ClearProviders();
+ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder.AddConsole();
+    builder.AddDebug();
+});
 builder.Services.AddSignalR();
 
 var app = builder.Build();
@@ -51,5 +56,5 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapHub<ContactHub>("/contacthub");
-
+app.Logger.LogInformation("Starting...");
 app.Run();

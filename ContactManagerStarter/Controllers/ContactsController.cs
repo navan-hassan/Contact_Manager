@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using MailKit;
 using MimeKit;
 using MailKit.Net.Smtp;
+using ContactManagerStarter.Controllers;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ContactManager.Controllers
 {
@@ -18,59 +20,77 @@ namespace ContactManager.Controllers
     {
         private readonly ApplicationContext _context;
         private readonly IHubContext<ContactHub> _hubContext;
+        private readonly ILogger _logger;
 
-        public ContactsController(ApplicationContext context, IHubContext<ContactHub> hubContext)
+        public ContactsController(ApplicationContext context, IHubContext<ContactHub> hubContext, ILoggerFactory logFactory)
         {
+            _logger = logFactory.CreateLogger<ContactsController>();
             _context = context;
             _hubContext = hubContext;
         }
 
         public async Task<IActionResult> DeleteContact(Guid id)
         {
-            var contactToDelete = await _context.Contacts
-                .Include(x => x.EmailAddresses)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (contactToDelete == null)
+            try
             {
+                var contactToDelete = await _context.Contacts
+                    .Include(x => x.EmailAddresses)
+                    .FirstOrDefaultAsync(x => x.Id == id);
+            
+
+                if (contactToDelete == null)
+                {
+                    _logger.LogError("Could not find contact with id " + id.ToString());
+                    return BadRequest();
+                }
+                _context.EmailAddresses.RemoveRange(contactToDelete.EmailAddresses);
+                _context.Contacts.Remove(contactToDelete);
+                await _context.SaveChangesAsync();
+
+                await _hubContext.Clients.All.SendAsync("Update");
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Could not delete contact with id " + id.ToString());
                 return BadRequest();
             }
-
-            _context.EmailAddresses.RemoveRange(contactToDelete.EmailAddresses);
-            _context.Contacts.Remove(contactToDelete);
-
-            await _context.SaveChangesAsync();
-
-            await _hubContext.Clients.All.SendAsync("Update");
-
-            return Ok();
         }
 
         public async Task<IActionResult> EditContact(Guid id)
         {
-            var contact = await _context.Contacts
-                .Include(x => x.EmailAddresses)
-                .Include(x => x.Addresses)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (contact == null)
+            try
             {
+                var contact = await _context.Contacts
+                    .Include(x => x.EmailAddresses)
+                    .Include(x => x.Addresses)
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (contact == null)
+                {
+                    _logger.LogError("Contact with id " + id.ToString() + " not found.");
+                    return NotFound();
+                }
+
+                var viewModel = new EditContactViewModel
+                {
+                    Id = contact.Id,
+                    Title = contact.Title,
+                    FirstName = contact.FirstName,
+                    LastName = contact.LastName,
+                    DOB = contact.DOB,
+                    PrimaryEmail = contact.PrimaryEmail,
+                    EmailAddresses = contact.EmailAddresses,
+                    Addresses = contact.Addresses
+                };
+
+                return PartialView("_EditContact", viewModel);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("Could not load contact with id " + id.ToString());
                 return NotFound();
             }
-
-            var viewModel = new EditContactViewModel
-            {
-                Id = contact.Id,
-                Title = contact.Title,
-                FirstName = contact.FirstName,
-                LastName = contact.LastName,
-                DOB = contact.DOB,
-                PrimaryEmail = contact.PrimaryEmail,
-                EmailAddresses = contact.EmailAddresses,
-                Addresses = contact.Addresses
-            };
-
-            return PartialView("_EditContact", viewModel);
         }
 
         public async Task<IActionResult> GetContacts()
@@ -96,71 +116,84 @@ namespace ContactManager.Controllers
         [HttpPost]
         public async Task<IActionResult> SaveContact([FromBody]SaveContactViewModel model)
         {
-            var contact = model.ContactId == Guid.Empty
-                ? new Contact { Title = model.Title, FirstName = model.FirstName, LastName = model.LastName, DOB = model.DOB }
-                : await _context.Contacts.Include(x => x.EmailAddresses).Include(x => x.Addresses).FirstOrDefaultAsync(x => x.Id == model.ContactId);
-
-            if (contact == null)
+            try
             {
+                var contact = model.ContactId == Guid.Empty
+                    ? new Contact { Title = model.Title, FirstName = model.FirstName, LastName = model.LastName, DOB = model.DOB }
+                    : await _context.Contacts.Include(x => x.EmailAddresses).Include(x => x.Addresses).FirstOrDefaultAsync(x => x.Id == model.ContactId);
+
+                if (contact == null)
+                {
+                    _logger.LogError("Contact with id " + model.ContactId.ToString() + " not found!");
+                    return NotFound();
+                }
+
+                _context.EmailAddresses.RemoveRange(contact.EmailAddresses);
+                _context.Addresses.RemoveRange(contact.Addresses);
+
+
+                foreach (var email in model.Emails)
+                {
+                    contact.EmailAddresses.Add(new EmailAddress
+                    {
+                        Type = email.Type,
+                        Email = email.Email,
+                        Contact = contact
+                    });
+                }
+
+                foreach (var address in model.Addresses)
+                {
+                    contact.Addresses.Add(new Address
+                    {
+                        Street1 = address.Street1,
+                        Street2 = address.Street2,
+                        City = address.City,
+                        State = address.State,
+                        Zip = address.Zip,
+                        Type = address.Type
+                    });
+                }
+
+                contact.Title = model.Title;
+                if (model.Emails.Count == 0)
+                {
+                    contact.PrimaryEmail = null;
+                }
+                else
+                {
+                    contact.PrimaryEmail = model.PrimaryEmail;
+                }
+
+                contact.FirstName = model.FirstName;
+                contact.LastName = model.LastName;
+                contact.DOB = model.DOB;
+
+                if (model.ContactId == Guid.Empty)
+                {
+                    await _context.Contacts.AddAsync(contact);
+                    _logger.LogInformation("No exisitng Guid found. Creating new contact.");
+                }
+                else
+                {
+                    _logger.LogInformation("Updating contact with id " + model.ContactId.ToString());
+                    _context.Contacts.Update(contact);
+                }
+
+
+                await _context.SaveChangesAsync();
+                await _hubContext.Clients.All.SendAsync("Update");
+
+                //SendEmailNotification(contact.Id);
+                _logger.LogInformation("Successfully saved changes to contact with id " + contact.Id.ToString());
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Could not save changes to contact.");
                 return NotFound();
+
             }
-
-            _context.EmailAddresses.RemoveRange(contact.EmailAddresses);
-            _context.Addresses.RemoveRange(contact.Addresses);
-
-
-            foreach (var email in model.Emails)
-            {
-                contact.EmailAddresses.Add(new EmailAddress
-                {
-                    Type = email.Type,
-                    Email = email.Email,
-                    Contact = contact
-                });
-            }
-
-            foreach (var address in model.Addresses)
-            {
-                contact.Addresses.Add(new Address
-                {
-                    Street1 = address.Street1,
-                    Street2 = address.Street2,
-                    City = address.City,
-                    State = address.State,
-                    Zip = address.Zip,
-                    Type = address.Type
-                });
-            }
-
-            contact.Title = model.Title;
-            if (model.Emails.Count  == 0) {
-                contact.PrimaryEmail = null;
-            }
-            else
-            {
-                contact.PrimaryEmail = model.PrimaryEmail;
-            }
-            
-            contact.FirstName = model.FirstName;
-            contact.LastName = model.LastName;
-            contact.DOB = model.DOB;
-
-            if (model.ContactId == Guid.Empty)
-            {
-                await _context.Contacts.AddAsync(contact);
-            }
-            else
-            {
-                _context.Contacts.Update(contact);
-            }
-
-
-            await _context.SaveChangesAsync();
-            await _hubContext.Clients.All.SendAsync("Update");
-
-            //SendEmailNotification(contact.Id);
-
-            return Ok();
         }
 
         private void SendEmailNotification(Guid contactId)
@@ -175,6 +208,10 @@ namespace ContactManager.Controllers
             {
                 Text = "Contact with id:" + contactId.ToString() +" was updated"
             };
+
+            _logger.LogInformation("Contact with id: " + contactId.ToString() +" was updated");
+
+
 
             using (var client = new SmtpClient())
             {
