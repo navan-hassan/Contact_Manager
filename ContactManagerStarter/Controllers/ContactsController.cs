@@ -65,6 +65,7 @@ namespace ContactManager.Controllers
                 FirstName = contact.FirstName,
                 LastName = contact.LastName,
                 DOB = contact.DOB,
+                PrimaryEmail = contact.PrimaryEmail,
                 EmailAddresses = contact.EmailAddresses,
                 Addresses = contact.Addresses
             };
@@ -130,7 +131,7 @@ namespace ContactManager.Controllers
                 });
             }
 
-            contact.Title = model.Title;
+            contact.PrimaryEmail = model.PrimaryEmail;
             contact.FirstName = model.FirstName;
             contact.LastName = model.LastName;
             contact.DOB = model.DOB;

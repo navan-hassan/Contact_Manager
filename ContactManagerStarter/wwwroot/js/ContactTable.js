@@ -46,7 +46,7 @@ $(function () {
             '<li class="list-group-item emailListItem" data-email="' + emailAddress + '" data-type="' + emailAddressType + '">' +
             '<span class="badge ' + emailTypeClass + ' m-l-10">' + emailAddressType + '</span>' +
             '<span class="m-l-20">' + emailAddress + ' </span>' +
-            '<a class="redText pointer float-right removeEmail" title="Delete Email">X</a>' +
+            '<a class="redText pointer float-right removeEmail" title="Delete Email">X</a>' + 
             '</li>');
             $('#newEmailAddress').val("");  
             $('#newEmailAddress').removeClass("invalidInput");
@@ -156,6 +156,7 @@ $(function () {
             FirstName: $("#editContactFirstName").val(),
             LastName: $("#editContactLastName").val(),
             DOB: $("#editContactDOB").val(),
+            PrimaryEmail: $("#selectPrimaryEmail option:selected").text(),
             Emails: getEmailAddresses(),
             Addresses: getAddresses()
         };

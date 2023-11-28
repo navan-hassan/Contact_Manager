@@ -36,7 +36,7 @@
         <h6>Email(s)</h6>
 
         <div class="row">
-            <div class="form-group col-md-12">
+            <div class="form-group col-md-8">
                 <ul id="emailList" class="list-group">
                     @if (Model.EmailAddresses != null)
                     {
@@ -60,6 +60,31 @@
                         }
                     }
                 </ul>
+            </div>
+            <div class="col-md-4"> 
+                @if (Model.EmailAddresses != null)
+                {
+                    <label>Primary Email</label>
+                    <select id="selectPrimaryEmail" class="form-control">
+                        @{
+                            if (Model.PrimaryEmail != null && Model.PrimaryEmail != "")
+                            {
+                                <option value=@Model.PrimaryEmail selected>@Model.PrimaryEmail</option>
+                            }
+                            else
+                            {
+                                <option value="" disabled selected>Select</option>
+                            }
+                            foreach (var emailAddress in Model.EmailAddresses)
+                            {
+                                if (emailAddress.Email != Model.PrimaryEmail)
+                                {
+                                    <option value=@emailAddress.Email>@emailAddress.Email</option>
+                                }
+                            }
+                        }
+                    </select>
+                }
             </div>
         </div>
 
