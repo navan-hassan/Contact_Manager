@@ -1,14 +1,24 @@
 {
   "version": "1.0",
   "defaultProvider": "unpkg",
-  "libraries": [
-    {
-      "library": "@microsoft/signalr@latest",
-      "destination": "wwwroot/lib/signalr/",
-      "files": [
-        "dist/browser/signalr.js",
-        "dist/browser/signalr.min.js"
-      ]
-    }
-  ]
+    "libraries": [
+        {
+            "library": "@microsoft/signalr@latest",
+            "destination": "wwwroot/lib/signalr/",
+            "files": [
+                "dist/browser/signalr.js",
+                "dist/browser/signalr.min.js"
+            ]
+        },
+        {
+            "provider": "cdnjs",
+            "library": "bootstrap-datepicker@1.10.0",
+            "destination": "wwwroot/lib/bootstrap-datepicker/"
+        },
+        {
+            "provider": "cdnjs",
+            "library": "datepicker@1.0.10",
+            "destination": "wwwroot/lib/datepicker/"
+        }
+    ]
 }
