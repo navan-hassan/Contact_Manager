@@ -153,7 +153,7 @@ $(function () {
 
         let data = {
             ContactId: $("#contactId").val() || "00000000-0000-0000-0000-000000000000",
-            Title: $("#editContactTitle").val(),
+            Title: $("#editContactTitle option:selected").text(),
             FirstName: $("#editContactFirstName").val(),
             LastName: $("#editContactLastName").val(),
             DOB: $("#editContactDOB").val(),

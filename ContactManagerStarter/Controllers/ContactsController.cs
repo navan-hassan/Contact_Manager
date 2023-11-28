@@ -132,7 +132,15 @@ namespace ContactManager.Controllers
                 });
             }
 
-            contact.PrimaryEmail = model.PrimaryEmail;
+            contact.Title = model.Title;
+            if (model.Emails.Count  == 0) {
+                contact.PrimaryEmail = null;
+            }
+            else
+            {
+                contact.PrimaryEmail = model.PrimaryEmail;
+            }
+            
             contact.FirstName = model.FirstName;
             contact.LastName = model.LastName;
             contact.DOB = model.DOB;
@@ -150,7 +158,7 @@ namespace ContactManager.Controllers
             await _context.SaveChangesAsync();
             await _hubContext.Clients.All.SendAsync("Update");
 
-            SendEmailNotification(contact.Id);
+            //SendEmailNotification(contact.Id);
 
             return Ok();
         }

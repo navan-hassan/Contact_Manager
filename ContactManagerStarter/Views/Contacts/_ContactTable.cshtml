@@ -22,7 +22,7 @@
                 <td class="editContact" data-id="@contact.Id">@contact.FirstName</td>
                 <td class="editContact" data-id="@contact.Id">@contact.LastName</td>
                 <td class="editContact" data-id="@contact.Id">@(contact.PrimaryEmail == null ?
-                        (contact.EmailAddresses.Count > 0) ? contact.EmailAddresses[0].Email : contact.EmailAddresses.Count
+                        (contact.EmailAddresses.Count > 0) ? contact.EmailAddresses[0].Email : ""
                     : contact.PrimaryEmail)</td>
                 <td class="whiteBackground defaultCursor"><a class="redText float-right pointer deleteContact" title="Delete Contact" data-toggle="modal" data-target="#modal-delete" data-id="@contact.Id">X</a></td>
             </tr>
