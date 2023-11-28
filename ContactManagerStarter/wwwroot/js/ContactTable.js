@@ -150,6 +150,15 @@ $(function () {
             return isValid;
         }
 
+        if ($('#newAddressStreet1').val() != "" || $('#newAddressStreet2').val() != "" || $('#newAddressCity').val() != "" || $('#newAddressState').val() != "" || $('#newAddressZip').val() != "") {
+            $("#AddressNotAddedError").show();
+        }
+
+        if ($('#newEmailAddress').val() != "") {
+            $("#EmailNotAddedError").show();
+
+        }
+
 
         let data = {
             ContactId: $("#contactId").val() || "00000000-0000-0000-0000-000000000000",
@@ -226,6 +235,8 @@ $(function () {
             success: function (data) {
                 $('#contactTable').html(data);
                 $("#ServerErrorAlert").hide();
+                $("#AddressNotAddedError").delay(5000).hide(0);
+                $("#EmailNotAddedError").delay(5000).hide(0);
                 $("#tableHeader").show();
             },
             error: function () {
